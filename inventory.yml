@@ -20,6 +20,7 @@ all:
 
       hosts:
         server1:
+          interface: enp2s0
           addr: 192.168.1.1
 
     rkn_clients:

@@ -4,7 +4,7 @@ ROUTES="{{ rkn.routes }}"
 DOMAINS="{{ rkn.domains }}"
 
 # Get & summarize routes
-/opt/rkn.py | sed 's/\(.*\)/route \1 via "{{ interfaces.ext }}";/' > $ROUTES.new
+/opt/rkn.py | sed 's/\(.*\)/route \1 via "{{ interface }}";/' > $ROUTES.new
 
 if [ $? -ne 0 ]; then
     rm -f $ROUTES.new
