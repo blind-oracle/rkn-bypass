@@ -1,0 +1,28 @@
+#!/bin/bash
+
+NS="{{ dnstap.namespace }}"
+
+IP="/sbin/ip"
+IPNS="$IP netns exec $NS $IP"
+
+IF_R="veth-$NS-r"
+IF_NS="veth-$NS-ns"
+
+IP_R="{{ dnstap.ip_root }}"
+IP_NS="{{ dnstap.ip_ns }}"
+
+/bin/systemctl stop dnstap-bgp || true
+
+$IP netns del $NS &>/dev/null
+$IP netns add $NS
+
+$IP link add $IF_R type veth peer name $IF_NS
+$IP link set $IF_NS netns $NS
+
+$IP addr add $IP_R remote $IP_NS dev $IF_R
+$IP link set $IF_R up
+
+$IPNS addr add $IP_NS remote $IP_R dev $IF_NS
+$IPNS link set $IF_NS up
+
+/bin/systemctl start dnstap-bgp

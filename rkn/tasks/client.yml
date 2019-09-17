@@ -1,0 +1,8 @@
+- name: Add ip rule to rc.local
+  lineinfile:
+    path: /etc/rc.local
+    line: "/sbin/ip rule add from all pref 256 lookup {{ rkn.kernel_table }}"
+    insertbefore: '^exit'
+
+- name: Execute ip rule add
+  shell: "/sbin/ip rule show | grep 'from all lookup {{ rkn.kernel_table }}' || /sbin/ip rule add from all pref 256 lookup {{ rkn.kernel_table }}"

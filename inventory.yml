@@ -1,0 +1,28 @@
+---
+all:
+  vars:
+    client_subnet: '192.168.0.0/16'
+    bgp:
+      as: 65000
+
+  children:
+    rkn_servers:
+      vars:
+        rkn:
+          kernel_table: 222
+          routes: '/etc/bird/conf.d/rkn_routes.list'
+          domains: '/var/cache/rkn_domains.txt'
+        dnstap:
+          socket: '/tmp/dnstap.sock'
+          namespace: dtap
+          ip_root: '192.168.2.1'
+          ip_ns: '192.168.2.2'
+
+      hosts:
+        server1:
+          addr: 192.168.1.1
+
+    rkn_clients:
+      hosts:
+        client1:
+          addr: 192.168.1.2

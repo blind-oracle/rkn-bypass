@@ -1,0 +1,13 @@
+log syslog all;
+router id {{ addr }};
+
+include "/etc/bird/conf.d/*.conf";
+
+protocol device {
+	scan time 10;
+};
+
+protocol kernel {
+	export all;
+	scan time 10;
+};

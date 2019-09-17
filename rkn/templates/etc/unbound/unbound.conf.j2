@@ -1,0 +1,19 @@
+server:
+    chroot: ""
+    port: 53
+    interface: 0.0.0.0
+    root-hints: "/var/lib/unbound/named.root"
+    auto-trust-anchor-file: "/var/lib/unbound/root.key"
+    access-control: {{ client_subnet }} allow
+
+remote-control:
+    control-enable: yes
+    control-use-cert: no
+
+dnstap:
+    dnstap-enable: yes
+    dnstap-socket-path: "{{ dnstap.socket }}"
+    dnstap-send-identity: no
+    dnstap-send-version: no
+
+    dnstap-log-client-response-messages: yes

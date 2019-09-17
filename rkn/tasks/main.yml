@@ -1,0 +1,46 @@
+- name: Install BIRD
+  apt:
+    name: bird
+    state: present
+
+- name: Create BIRD config
+  template:
+    src: etc/bird/bird.conf.j2
+    dest: /etc/bird/bird.conf
+    owner: 'bird'
+    group: 'bird'
+    mode: 0640
+  register: bird_conf
+
+- name: Create BIRD conf.d
+  file:
+    path: /etc/bird/conf.d
+    state: directory
+    owner: 'bird'
+    group: 'bird'
+
+- name: Generate BIRD RKN config
+  template:
+    src: etc/bird/conf.d/rkn.conf.j2
+    dest: /etc/bird/conf.d/rkn.conf
+    owner: 'bird'
+    group: 'bird'
+    mode: 0640
+  register: bird_cfg
+
+- import_tasks: server.yml
+  when: '"rkn_servers" in group_names'
+
+- import_tasks: client.yml
+  when: '"rkn_clients" in group_names'
+
+- name: Reload BIRD
+  block:
+  - name: Validate BIRD config
+    command: "bird -p -c /etc/bird/bird.conf"
+
+  - name: Reload BIRD
+    service:
+      name: 'bird'
+      state: reloaded
+  when: bird_cfg.changed

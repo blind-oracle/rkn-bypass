@@ -1,0 +1,94 @@
+- name: Install Unbound & friends
+  apt:
+    name:
+      - jq
+      - unbound
+    state: present
+    update_cache: yes
+
+- name: Install DNSTap-BGP
+  apt:
+    deb: https://github.com/blind-oracle/dnstap-bgp/releases/download/v1.0.0/dnstap-bgp_1.0.0_amd64.deb
+    state: present
+
+- name: Generate Unbound config
+  template:
+    src: etc/unbound/unbound.conf.j2
+    dest: /etc/unbound/unbound.conf
+  register: unbound_cfg
+
+- name: Put named.root
+  copy:
+    src: var/lib/unbound/named.root
+    dest: /var/lib/unbound/named.root
+    owner: unbound
+    group: unbound
+  register: named_root
+
+- name: Restart Unbound
+  service:
+    name: unbound
+    enabled: true
+    state: restarted
+  when: unbound_cfg.changed or named_root.changed
+
+- name: Disable DNSTap-BGP service
+  service:
+    name: dnstap-bgp
+    enabled: false
+
+- name: Generate DNSTap-BGP config
+  template:
+    src: etc/dnstap-bgp.toml.j2
+    dest: /etc/dnstap-bgp.toml
+  register: dnstap_cfg
+
+- name: Generate DNSTap-BGP script
+  template:
+    src: opt/dnstap-bgp.sh.j2
+    dest: /opt/dnstap-bgp.sh
+    mode: 0755
+  register: dnstap_scr
+
+- name: Put rkn.py script
+  copy:
+    src: opt/rkn.py
+    dest: /opt/rkn.py
+    mode: 0755
+  register: rknpy
+
+- name: Put cronjob
+  copy:
+    src: etc/cron.d/rkn
+    dest: /etc/cron.d/rkn
+
+- name: Put update script
+  template:
+    src: opt/rkn_update.sh.j2
+    dest: /opt/rkn_update.sh
+    mode: 0755
+  register: upd_scr
+
+- name: Check if routes list exists
+  stat:
+    path: "{{ rkn.routes }}"
+  register: rkn_routes
+
+- name: Check if domains list exists
+  stat:
+    path: "{{ rkn.domains }}"
+  register: rkn_domains
+
+- name: Generate RKN lists
+  shell: /opt/rkn_update.sh
+  when: not rkn_routes.stat.exists or not rkn_domains.stat.exists or upd_scr.changed or rknpy.changed
+
+- name: Add DNSTap-BGP to rc.local
+  lineinfile:
+    path: /etc/rc.local
+    line: /opt/dnstap-bgp.sh
+    insertbefore: '^exit'
+
+- name: Restart DNSTap-BGP
+  shell: /opt/dnstap-bgp.sh
+  when: dnstap_scr.changed or dnstap_cfg.changed

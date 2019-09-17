@@ -1,0 +1,38 @@
+#!/bin/bash
+
+ROUTES="{{ rkn.routes }}"
+DOMAINS="{{ rkn.domains }}"
+
+# Get & summarize routes
+/opt/rkn.py | sed 's/\(.*\)/route \1 via "{{ interfaces.ext }}";/' > $ROUTES.new
+
+if [ $? -ne 0 ]; then
+    rm -f $ROUTES.new
+    echo "Unable to download RKN routes"
+    exit 1
+fi
+
+if [ -e $ROUTES ]; then
+    mv $ROUTES $ROUTES.old
+fi
+
+mv $ROUTES.new $ROUTES
+
+/bin/systemctl try-reload-or-restart bird
+
+# Get domains
+curl -s https://api.reserve-rbl.ru/api/v2/domains/json -o - | jq -r '.[]' | sed 's/^\*\.//' | sort | uniq > $DOMAINS.new
+
+if [ $? -ne 0 ]; then
+    rm -f $DOMAINS.new
+    echo "Unable to download RKN domains"
+    exit 1
+fi
+
+if [ -e $DOMAINS ]; then
+    mv $DOMAINS $DOMAINS.old
+fi
+
+mv $DOMAINS.new $DOMAINS
+
+/bin/systemctl try-reload-or-restart dnstap-bgp

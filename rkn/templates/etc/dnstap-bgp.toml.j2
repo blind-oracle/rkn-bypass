@@ -1,0 +1,15 @@
+namespace = "{{ dnstap.namespace }}"
+domains = "{{ rkn.domains }}"
+ttl = "168h"
+
+[dnstap]
+listen = "{{ dnstap.socket }}"
+perm = "0666"
+
+[bgp]
+as = 65000
+routerID = "{{ dnstap.ip_ns }}"
+
+peers = [
+    "{{ dnstap.ip_root }}",
+]

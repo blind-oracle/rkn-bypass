@@ -1,0 +1,62 @@
+table rkn;
+{% if 'rkn_servers' in group_names %}
+{% set server = true %}
+{% set peers = groups['rkn_clients'] + groups['rkn_servers'] %}
+{% else %}
+{% set server = false %}
+{% set peers = groups['rkn_servers'] %}
+{% endif %}
+
+# Peers
+{% for p in peers|sort %}
+{% if p != inventory_hostname %}
+protocol bgp bgp_{{ p }} {
+    table rkn;
+    local as {{ bgp.as }};
+    neighbor {{ hostvars[p].addr }} as {{ bgp.as }};
+    direct;
+    bfd on;
+    next hop self;
+    graceful restart;
+    graceful restart time 60;
+{% if server %}
+    export all;
+    import none;
+{% else %}
+    rr client;
+    export none;
+    import all;
+{% endif %}
+}
+
+{% endif %}
+{% endfor %}
+{% if server %}
+# DNSTap-BGP
+protocol bgp bgp_dnstap {
+    table rkn;
+    local as {{ bgp.as }};
+    neighbor {{ dnstap.ip_ns }} as {{ bgp.as }};
+    direct;
+    passive on;
+    rr client;
+    import all;
+    export none;
+}
+
+# Static routes list
+protocol static static_rkn {
+    table rkn;
+    include "rkn_routes.list";
+    import all;
+    export all;
+}
+{% else %}
+protocol kernel {
+    table rkn;
+    kernel table {{ rkn.kernel_table }};
+    scan time 10;
+    import all;
+    export all;
+}
+{% endif %}
