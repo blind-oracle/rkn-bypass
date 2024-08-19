@@ -8,7 +8,7 @@
 
 - name: Install DNSTap-BGP
   apt:
-    deb: https://github.com/blind-oracle/dnstap-bgp/releases/download/v1.0.0/dnstap-bgp_1.0.0_amd64.deb
+    deb: https://github.com/blind-oracle/dnstap-bgp/releases/download/v1.1.0/dnstap-bgp_1.1.0_amd64.deb
     state: present
 
 - name: Generate Unbound config
@@ -39,8 +39,8 @@
 
 - name: Generate DNSTap-BGP config
   template:
-    src: etc/dnstap-bgp.toml.j2
-    dest: /etc/dnstap-bgp.toml
+    src: etc/dnstap-bgp/dnstap-bgp.conf.j2
+    dest: /etc/dnstap-bgp/dnstap-bgp.conf
   register: dnstap_cfg
 
 - name: Generate DNSTap-BGP script
